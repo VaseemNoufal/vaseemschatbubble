@@ -248,8 +248,14 @@ module.exports = async (req, res) => {
     console.log("Incoming request body:", req.body);
 
     // ✅ Check required keys
-    if (!openrouterKey) throw new Error("Missing OPENROUTER_API_KEY");
-    if (!supabaseUrl || !supabaseKey) throw new Error("Missing Supabase credentials");
+    if (!openrouterKey) {
+      console.error("Missing OPENROUTER_API_KEY environment variable");
+      return res.status(500).json({ error: 'API configuration error: Missing OpenRouter API key' });
+    }
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Missing Supabase credentials");
+      return res.status(500).json({ error: 'API configuration error: Missing Supabase credentials' });
+    }
 
     // ✅ Send to OpenRouter
     const response = await axios.post(
@@ -289,7 +295,19 @@ module.exports = async (req, res) => {
     // ✅ Full error log
     console.error("Chat API error:", error);
     console.error("Response Data:", error.response?.data);
-    res.status(500).json({ error: 'AI service error' });
+    
+    // Return more specific error messages
+    if (error.response?.status === 401) {
+      return res.status(401).json({ 
+        error: 'Authentication failed. Please check your OpenRouter API key.',
+        details: error.response.data
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'AI service error',
+      details: error.response?.data || error.message
+    });
   }
 };
 // api/chat.js
