@@ -123,7 +123,7 @@
   
     const toggle = document.createElement("div");
     toggle.id = "chat-toggle";
-    toggle.innerHTML = `<img src="/images/message-solid.svg" alt="Chat" style=" margin-top: 2px; filter: invert(1);">`;
+    toggle.innerHTML = `<img src="https://vaseemschatbubble.vercel.app/images/message-solid.svg" alt="Chat" style=" margin-top: 2px; filter: invert(1);">`;
     Object.assign(toggle.style, {
       position: "fixed",
       bottom: "25px",
@@ -243,7 +243,7 @@
       chat.appendChild(loading);
       chat.scrollTop = chat.scrollHeight;
   
-      fetch("/api/chat", {
+      fetch("https://vaseemschatbubble.vercel.app/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, systemPrompt }),
