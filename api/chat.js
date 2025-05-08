@@ -213,6 +213,15 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const openrouterKey = process.env.OPENROUTER_API_KEY;
 
+// ✅ Debug: Log environment variables (safely)
+console.log("Environment Variables Status:", {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasSupabaseKey: !!supabaseKey,
+  hasOpenRouterKey: !!openrouterKey,
+  openRouterKeyLength: openrouterKey ? openrouterKey.length : 0,
+  openRouterKeyPrefix: openrouterKey ? openrouterKey.substring(0, 3) : 'none'
+});
+
 // ✅ Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -233,13 +242,6 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Only POST requests allowed' });
   }
 
-  // ✅ Debug: check env vars
-  console.log("ENV CHECK:", {
-    SUPABASE_URL: !!supabaseUrl,
-    SUPABASE_KEY: !!supabaseKey,
-    OPENROUTER_API_KEY: !!openrouterKey
-  });
-
   const { message, systemPrompt } = req.body;
   const clientId = req.headers.origin || "unknown-site";
 
@@ -247,15 +249,29 @@ module.exports = async (req, res) => {
     // ✅ Log incoming request
     console.log("Incoming request body:", req.body);
 
-    // ✅ Check required keys
+    // ✅ Check required keys with detailed error messages
     if (!openrouterKey) {
       console.error("Missing OPENROUTER_API_KEY environment variable");
-      return res.status(500).json({ error: 'API configuration error: Missing OpenRouter API key' });
+      return res.status(500).json({ 
+        error: 'API configuration error: Missing OpenRouter API key',
+        details: 'Please check your Vercel environment variables'
+      });
     }
+
     if (!supabaseUrl || !supabaseKey) {
       console.error("Missing Supabase credentials");
-      return res.status(500).json({ error: 'API configuration error: Missing Supabase credentials' });
+      return res.status(500).json({ 
+        error: 'API configuration error: Missing Supabase credentials',
+        details: 'Please check your Vercel environment variables'
+      });
     }
+
+    // ✅ Log the request we're about to make (safely)
+    console.log("Making OpenRouter request with:", {
+      model: 'openai/gpt-3.5-turbo-0613',
+      hasAuthHeader: !!openrouterKey,
+      authHeaderLength: openrouterKey ? openrouterKey.length : 0
+    });
 
     // ✅ Send to OpenRouter
     const response = await axios.post(
@@ -292,15 +308,28 @@ module.exports = async (req, res) => {
     res.status(200).json({ reply });
 
   } catch (error) {
-    // ✅ Full error log
-    console.error("Chat API error:", error);
-    console.error("Response Data:", error.response?.data);
+    // ✅ Full error log with detailed information
+    console.error("Chat API error details:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      hasOpenRouterKey: !!openrouterKey,
+      openRouterKeyLength: openrouterKey ? openrouterKey.length : 0
+    });
     
     // Return more specific error messages
     if (error.response?.status === 401) {
       return res.status(401).json({ 
         error: 'Authentication failed. Please check your OpenRouter API key.',
-        details: error.response.data
+        details: {
+          message: error.response.data,
+          keyStatus: {
+            exists: !!openrouterKey,
+            length: openrouterKey ? openrouterKey.length : 0,
+            prefix: openrouterKey ? openrouterKey.substring(0, 3) : 'none'
+          }
+        }
       });
     }
     
