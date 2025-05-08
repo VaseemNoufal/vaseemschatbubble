@@ -243,7 +243,7 @@
       chat.appendChild(loading);
       chat.scrollTop = chat.scrollHeight;
   
-      fetch("/api/chat", {
+      fetch("https://vaseemschatbubble.vercel.app/api/chat.js", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, systemPrompt }),
